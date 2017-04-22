@@ -1,0 +1,28 @@
+apply plugin: 'java'
+
+version = '1.0'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+task fatJar(type: Jar) {
+	manifest {
+        attributes 'Implementation-Title': 'Spark Word Count',
+        	'Implementation-Version': version,
+        	'Main-Class': 'com.hieutrtr.WordCount'
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+repositories {
+   mavenCentral()
+   jcenter()
+}
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.21'
+    // https://mvnrepository.com/artifact/org.apache.spark/spark-core_2.10
+    compile group: 'org.apache.spark', name: 'spark-streaming_2.10', version: '2.1.0'
+    compile group: 'org.apache.spark', name: 'spark-streaming-kafka_2.10', version: '1.6.2'
+}
