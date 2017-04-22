@@ -23,6 +23,5 @@ repositories {
 dependencies {
     compile 'org.slf4j:slf4j-api:1.7.21'
     // https://mvnrepository.com/artifact/org.apache.spark/spark-core_2.10
-    compile group: 'org.apache.spark', name: 'spark-streaming_2.10', version: '2.1.0'
     compile group: 'org.apache.spark', name: 'spark-streaming-kafka_2.10', version: '1.6.2'
 }
