@@ -31,6 +31,8 @@ import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaPairReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
+import org.apache.spark.api.java.function.VoidFunction;
+import java.util.function.Consumer;
 
 /**
  * Consumes messages from one or more topics in Kafka and does wordcount.
@@ -54,11 +56,14 @@ public final class WordCount {
 
   public static void main(String[] args) throws Exception {
     if (args.length < 4) {
-      System.err.println("Usage: JavaKafkaWordCount <zkQuorum> <group> <topics> <numThreads>");
+      System.err.println("Usage: JavaKafkaWordCount <zkQuorum> <group> <topics> <numThreads> <cassandraHost>");
       System.exit(1);
     }
 
-    SparkConf sparkConf = new SparkConf().setAppName("JavaKafkaWordCount");
+    SparkConf sparkConf = new SparkConf()
+    .setMaster("local[*]")
+    .setAppName("JavaKafkaWordCount")
+    .set("spark.cassandra.connection.host", args[4]);
     // Create the context with 2 seconds batch size
     JavaStreamingContext jssc = new JavaStreamingContext(sparkConf, new Duration(2000));
 
@@ -73,13 +78,12 @@ public final class WordCount {
             KafkaUtils.createStream(jssc, args[0], args[1], topicMap);
 
     JavaDStream<String> lines = messages.map(Tuple2::_2);
-
-    JavaDStream<String> words = lines.flatMap(x -> Arrays.asList(SPACE.split(x)).iterator());
-
-    JavaPairDStream<String, Integer> wordCounts = words.mapToPair(s -> new Tuple2<>(s, 1))
-        .reduceByKey((i1, i2) -> i1 + i2);
-
-    wordCounts.print();
+    lines.foreachRDD(l -> new VoidFunction<String>() {
+      @Override public void call(String l) {
+        System.out.println(l);
+        // JSONCassandraInsert(l);
+      }
+    });
     jssc.start();
     jssc.awaitTermination();
   }
